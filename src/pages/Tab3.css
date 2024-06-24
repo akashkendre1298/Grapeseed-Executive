@@ -1,0 +1,41 @@
+.edit-enquiry-container {
+  --ion-background-color: #daa520;
+  padding: 20px;
+}
+
+.edit-enquiry-title {
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 20px;
+}
+
+.edit-enquiry-card {
+  width: 100%;
+  margin: 20px 0;
+  padding: 10px;
+}
+
+.edit-enquiry-buttons-container {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+}
+
+.edit-enquiry-view-more-button {
+  color: white;
+  text-align: center;
+  padding: 10px;
+  border-radius: 5px;
+  /* background-color: black; */
+}
+
+.edit-enquiry-dropdown-button {
+  /* background-color: #daa520; */
+  padding: 10px;
+  border-radius: 5px;
+}
+
+.edit-enquiry-edit-status-button {
+  text-align: center;
+  color: white;
+}

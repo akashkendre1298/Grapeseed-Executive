@@ -1,0 +1,56 @@
+/* ProfilePage.css */
+
+.profile-page-container {
+  --ion-background-color: #daa520; /* Set background color */
+  /* padding: 20px; */
+  align-items: center;
+}
+
+.profile-logo {
+  width: 100%;
+  height: 180px;
+  max-width: 300px; /* Adjust as needed */
+}
+
+.profile-title {
+  font-size: 30px;
+  font-weight: bold;
+  margin-bottom: 20px;
+  text-align: center;
+  color: #000; /* Text color */
+}
+
+.profile-data-container {
+  width: 100%;
+}
+
+.profile-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.profile-icon {
+  margin-right: 10px;
+}
+
+.profile-text {
+  font-size: 20px;
+  color: #000; /* Text color */
+}
+
+.logout-button {
+  color: #000000; /* Text color */
+  padding: 10px;
+  border-radius: 8px;
+  margin-top: 20px;
+  width: 120px;
+  text-align: center;
+  background-color: rgba(255, 0, 0, 0.896);
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.logout-button:hover {
+  opacity: 0.8; /* Adjust hover opacity */
+}
