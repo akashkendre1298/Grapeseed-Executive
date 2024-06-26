@@ -22,7 +22,7 @@ import {
 import { useHistory } from "react-router-dom";
 import logo from "../assets/gapeseed-logo.png"; // Import your logo image file
 
-import "./Profile.css"; // Import your custom CSS file
+import "./ProfilePage.css"; // Import your custom CSS file
 
 const ProfilePage: React.FC = () => {
   const history = useHistory();

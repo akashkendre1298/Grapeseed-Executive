@@ -1,0 +1,36 @@
+/* .container {
+  background-color: #daa520;
+} */
+
+.title {
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.card {
+  width: 90%;
+  /* margin: 20px auto; */
+  /* padding: 10px auto; */
+  margin: 10px auto;
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.viewMoreButton {
+  color: blue;
+  margin-top: 10px;
+  text-align: center;
+}
+
+.view-enquiry-content {
+  --background: #daa520;
+  --color: black;
+  background: var(--background);
+  color: var(--color);
+}

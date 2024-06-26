@@ -26,25 +26,25 @@ import logo from "../assets/gapeseed-logo.png"; // Import your logo image file
 const Dashboard: React.FC = () => {
   const history = useHistory();
 
-  const handleCardClick = (message: string) => {
-    switch (message) {
-      case "Enquiry":
-        history.push("/customer-details");
-        break;
-      case "View Enquiry":
-        history.push("/view-inquiry");
-        break;
-      case "Update Status":
-        history.push("/update-status");
-        break;
-      case "Edit Enquiry Status":
-        history.push("/edit-inquiry-status");
-        break;
-      default:
-        alert(`${message} Clicked!`);
-        break;
-    }
-  };
+  // const handleCardClick = (message: string) => {
+  //   switch (message) {
+  //     case "Enquiry":
+  //       history.push("/enquirypage");
+  //       break;
+  //     case "View Enquiry":
+  //       history.push("/viewenquiry");
+  //       break;
+  //     case "Update Status":
+  //       history.push("/updatestatus");
+  //       break;
+  //     case "Edit Enquiry Status":
+  //       history.push("/updatestatus");
+  //       break;
+  //     default:
+  //       alert(`${message} Clicked!`);
+  //       break;
+  //   }
+  // };
 
   //   const items = [
   //     { title: "Enquiry", message: "Enquiry" },
@@ -52,32 +52,48 @@ const Dashboard: React.FC = () => {
   //     { title: "Update Status", message: "Update Status" },
   //     { title: "Edit Enquiry Status", message: "Edit Enquiry Status" },
   //   ];
-
+  const handleCardClick = (path) => {
+    history.push(path);
+  };
   return (
     <IonPage>
-      <IonContent className="dashboard-content">
+      <IonContent className="dashboard-content  ion-padding">
         <IonGrid className="dashboard-grid">
           <IonRow className="dashboard-logo-row">
             <IonCol size="12" className="ion-text-center">
               <img src={logo} alt="Logo" className="dashboard-logo" />
             </IonCol>
           </IonRow>
-
           <div>
             <div className="row-dashboard">
-              <div>
+              <div onClick={() => handleCardClick("/enquirypage")}>
                 <button className="card-button">Enquiry</button>
               </div>
               <div>
-                <button className="card-button">View Enquiry </button>
+                <button
+                  onClick={() => handleCardClick("/viewenquiry")}
+                  className="card-button"
+                >
+                  View Enquiry{" "}
+                </button>
               </div>
             </div>
             <div className="row-dashboard">
               <div>
-                <button className="card-button">Update Status</button>
+                <button
+                  onClick={() => handleCardClick("/updatestatus")}
+                  className="card-button"
+                >
+                  Update Status
+                </button>
               </div>
               <div>
-                <button className="card-button">Edit Status</button>
+                <button
+                  onClick={() => handleCardClick("/editstatus")}
+                  className="card-button"
+                >
+                  Edit Status
+                </button>
               </div>
             </div>
           </div>

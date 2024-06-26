@@ -1,0 +1,10 @@
+.enquiry-content {
+  --background: #daa520;
+  --color: black;
+  background: var(--background);
+  color: var(--color);
+}
+.enquiry-input {
+  display: flex;
+  justify-content: right;
+}

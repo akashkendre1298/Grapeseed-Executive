@@ -13,9 +13,9 @@ import {
   IonText,
   IonItem,
 } from "@ionic/react";
-import "./Tab2.css";
-
-const Tab2 = () => {
+import "./ViewEnquiry.css";
+import logo from "../assets/gapeseed-logo.png"; // Import your logo image file
+const ViewEnquiry = () => {
   const [expandedCards, setExpandedCards] = useState([]);
   const [inquiryData, setInquiryData] = useState([]);
   const apiUrl = "https://grapeseed-executive.onrender.com/api/enquiry";
@@ -118,8 +118,13 @@ const Tab2 = () => {
 
   return (
     <IonPage>
-      <IonContent>
-        <IonText className="title">View Inquiry Page</IonText>
+      <IonContent className="view-enquiry-content">
+        <IonRow className="ion-text-center">
+          <IonCol>
+            <img src={logo} alt="Logo" className="profile-logo" />{" "}
+            {/* <h3>View Enquiry</h3> */}
+          </IonCol>
+        </IonRow>
 
         {inquiryData.length > 0 ? (
           inquiryData.map((data, index) => (
@@ -145,11 +150,18 @@ const Tab2 = () => {
             </IonCard>
           ))
         ) : (
-          <IonText>No inquiry data available</IonText>
+          <IonText
+            style={{
+              display: "flex",
+              justifyContent: "center",
+            }}
+          >
+            No inquiry data available
+          </IonText>
         )}
       </IonContent>
     </IonPage>
   );
 };
 
-export default Tab2;
+export default ViewEnquiry;

@@ -13,6 +13,7 @@
   width: 100%;
   margin: 20px 0;
   padding: 10px;
+  --ion-background-color: white !important;
 }
 
 .edit-enquiry-buttons-container {

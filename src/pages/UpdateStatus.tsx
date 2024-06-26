@@ -15,9 +15,10 @@ import {
   IonSelect,
   IonSelectOption,
 } from "@ionic/react";
-import "./Tab3.css";
+import "./UpdateStatus.css";
+import logo from "../assets/gapeseed-logo.png"; // Import your logo image file
 
-const Tab3 = () => {
+const UpdateStatus = () => {
   const [enquiries, setEnquiries] = useState([]);
   const [statuses, setStatuses] = useState({});
   const [showDetailsMap, setShowDetailsMap] = useState({});
@@ -90,8 +91,13 @@ const Tab3 = () => {
 
   return (
     <IonPage>
-      <IonContent className="edit-enquiry-container">
-        <IonText className="edit-enquiry-title">Enquiry List</IonText>
+      <IonContent className="edit-enquiry-container ion-padding">
+        <IonRow className="ion-text-center">
+          <IonCol>
+            <img src={logo} alt="Logo" className="profile-logo" />{" "}
+            {/* <h3>View Enquiry</h3> */}
+          </IonCol>
+        </IonRow>
 
         {enquiries.map((inquiryData) => (
           <IonCard key={inquiryData._id} className="edit-enquiry-card">
@@ -229,4 +235,4 @@ const Tab3 = () => {
   );
 };
 
-export default Tab3;
+export default UpdateStatus;
