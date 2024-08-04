@@ -27,6 +27,7 @@ import "./ProfilePage.css"; // Import your custom CSS file
 const ProfilePage: React.FC = () => {
   const history = useHistory();
   const [profileData, setProfileData] = useState({
+    _id: "",
     clientName: "",
     clientPhone: "",
     clientAddress: "",
@@ -40,13 +41,10 @@ const ProfilePage: React.FC = () => {
   useEffect(() => {
     const fetchProfileData = async () => {
       try {
-        // Retrieve user ID from localStorage
         const userId = localStorage.getItem("userId");
-        console.log("User ID from localStorage:", userId); // Debugging log
 
         if (userId) {
-          // Fetch user data using the retrieved user ID
-          const apiUrl = `https://executive-grapeseed.onrender.com/api/clients/${userId}`;
+          const apiUrl = `http://localhost:4000/api/clients/_id/${userId}`;
           const response = await fetch(apiUrl);
 
           if (!response.ok) {
@@ -54,9 +52,26 @@ const ProfilePage: React.FC = () => {
           }
 
           const userData = await response.json();
-          console.log("Fetched user data:", userData); // Debugging log
 
-          setProfileData(userData);
+          // Assuming the API returns an array with a single object, extract the first element
+          const user = userData[0];
+
+          if (!user) {
+            throw new Error("User data not found in response");
+          }
+
+          setProfileData({
+            _id: user._id || "",
+            clientName: user.clientName || "",
+            clientPhone: user.clientPhone || "",
+            clientAddress: user.clientAddress || "",
+            clientPanCard: user.clientPanCard || "",
+            clientEmail: user.clientEmail || "",
+          });
+
+          // Log clientName after setting profileData
+          console.log("Client Name:", user.clientName);
+
           setLoading(false);
         } else {
           console.warn("User ID not found in localStorage");
@@ -73,7 +88,8 @@ const ProfilePage: React.FC = () => {
     };
 
     fetchProfileData();
-  }, []); // The empty dependency array ensures that the effect runs only once when the component mounts
+  }, []);
+  // The empty dependency array ensures that the effect runs only once when the component mounts
 
   const handleLogout = async () => {
     try {

@@ -49,6 +49,8 @@ import UpdateStatus from "./pages/UpdateStatus";
 import ProfilePage from "./pages/ProfilePage";
 import EnquiryPage from "./pages/Enquiry";
 import EditStatus from "./pages/EditStatus";
+import PolicyDetails from "./pages/PolicyDetails";
+import Reports from "./pages/Reorts";
 
 setupIonicReact();
 
@@ -70,15 +72,17 @@ const App: React.FC = () => (
             <Route path="/updatestatus" component={UpdateStatus} />
             <Route path="/editstatus" component={EditStatus} />
             <Route path="/profilepage" component={ProfilePage} />
+            <Route path="/policydetails" component={PolicyDetails} />
+            <Route path="/reports" component={Reports} />
           </IonRouterOutlet>
           <IonTabBar slot="bottom">
             <IonTabButton tab="dashboard" href="/dashboard">
               <IonIcon aria-hidden="true" icon={square} />
               <IonLabel>Dashboard</IonLabel>
             </IonTabButton>
-            <IonTabButton tab="reports" href="/reports">
+            <IonTabButton tab="profile" href="/profilepage">
               <IonIcon aria-hidden="true" icon={square} />
-              <IonLabel>Reports</IonLabel>
+              <IonLabel>Profile</IonLabel>
             </IonTabButton>
           </IonTabBar>
         </IonTabs>

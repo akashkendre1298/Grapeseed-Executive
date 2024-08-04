@@ -13,6 +13,7 @@ import { useHistory } from "react-router-dom";
 
 import "./Login.css"; // Import custom styles for Login page
 import logo from "../assets/gapeseed-logo.png"; // Import your logo image file
+import axios from "axios";
 
 const Login: React.FC = () => {
   const history = useHistory();
@@ -25,35 +26,40 @@ const Login: React.FC = () => {
     try {
       setIsLoggingIn(true);
 
-      const apiUrl = "https://grapeseed-executive.onrender.com/api/clients";
-      const response = await fetch(apiUrl);
+      const apiUrl = "http://localhost:4000/api/clients/login";
+      const response = await axios.post(apiUrl, {
+        clientEmail,
+        clientPassword,
+      });
 
-      if (!response.ok) {
-        throw new Error("Network response was not ok");
-      }
+      if (
+        response.status === 200 &&
+        response.data.client &&
+        response.data.client.id
+      ) {
+        // Save id and token to localStorage
+        localStorage.setItem("userId", response.data.client.id);
+        console.log(response.data.client.id);
 
-      const apiResponse = await response.json();
-      const user = apiResponse.find(
-        (element: any) => element.clientEmail === clientEmail
-      );
+        localStorage.setItem("token", response.data.token);
+        console.log(response.data.token);
 
-      if (user) {
-        if (user.clientpassword === clientPassword) {
-          // Save user ID to localStorage
-          localStorage.setItem("userId", user._id);
-
-          // Navigate to the 'Dashboard' screen upon successful login
-          history.push("/dashboard");
-        } else {
-          alert("Login Failed", "Invalid password. Please try again.");
-          setIsLoggingIn(false);
-        }
+        // Navigate to the 'Dashboard' screen upon successful login
+        history.push("/dashboard");
       } else {
-        alert("Login Failed", "Email not found. Please try again.");
-        setIsLoggingIn(false);
+        alert("Login Failed: Invalid email or password. Please try again.");
       }
     } catch (error) {
       console.error("Error during login:", error);
+      if (error.response) {
+        // Handle specific error cases as needed
+        alert(`Login Failed: ${error.response.data.message}`);
+      } else if (error.request) {
+        alert("Login Failed: No response from server. Please try again.");
+      } else {
+        alert(`Login Failed: ${error.message}`);
+      }
+    } finally {
       setIsLoggingIn(false);
     }
   };
@@ -62,7 +68,7 @@ const Login: React.FC = () => {
     <IonPage>
       <IonContent className="login-background">
         <div className="container">
-          <IonImg src={logo} className="logo" />
+          <IonImg src={logo} className="logo-login" />
 
           <IonText className="login-heading">Login</IonText>
 

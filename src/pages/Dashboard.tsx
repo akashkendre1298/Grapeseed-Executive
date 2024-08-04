@@ -96,6 +96,24 @@ const Dashboard: React.FC = () => {
                 </button>
               </div>
             </div>
+            <div className="row-dashboard">
+              <div>
+                <button
+                  onClick={() => handleCardClick("/policydetails")}
+                  className="card-button"
+                >
+                  Policy Details
+                </button>
+              </div>
+              <div>
+                <button
+                  onClick={() => handleCardClick("/reports")}
+                  className="card-button"
+                >
+                  Reports
+                </button>
+              </div>
+            </div>
           </div>
 
           {/* <IonRow className="dashboard-cards-row">

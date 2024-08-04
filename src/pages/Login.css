@@ -14,9 +14,11 @@
   padding: 16px;
 }
 
-.logo {
-  width: 150px; /* Adjust size as needed */
+.logo-login {
+
+  width: 300px; /* Adjust size as needed */
   height: auto;
+  margin-top: 100px;
   margin-bottom: 24px; /* Spacing below the logo */
 }
 

@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
 import {
   IonPage,
   IonContent,
@@ -16,11 +17,44 @@ import {
   IonAlert,
   IonCol,
   IonRow,
+  IonItemDivider,
+  IonText,
+  IonList,
 } from "@ionic/react";
 import "./Enquiry.css"; // Import your custom CSS file
 import logo from "../assets/gapeseed-logo.png"; // Import your logo image file
 
 const EnquiryPage: React.FC = () => {
+  const [result, setResult] = useState("");
+
+  const uploadFiles = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault(); // Prevent the default form submission
+
+    // Create a FormData object from the form
+    const formData = new FormData(event.currentTarget);
+
+    try {
+      // Send a POST request with the form data
+      const response = await fetch("http://127.0.0.1:5000/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      // Check if the response is OK (status code 200)
+      if (!response.ok) {
+        throw new Error("Network response was not ok.");
+      }
+
+      // Get the JSON result from the response
+      const result = await response.json();
+
+      // Display the result on the page
+      setResult(result.result);
+    } catch (error) {
+      // Handle any errors that occurred during the fetch
+      setResult("Error: " + error.message);
+    }
+  };
   const [formData, setFormData] = useState({
     Pan_Card: "",
     Adhar_Card: "",
@@ -32,7 +66,6 @@ const EnquiryPage: React.FC = () => {
     Mother_Name: "",
     Last_Education: "",
     Email: "",
-    Married_Status: "",
     lifeStage: "",
     Nominee_Name: "",
     Nominee_DOB: "",
@@ -44,11 +77,48 @@ const EnquiryPage: React.FC = () => {
     Weight: "",
     Life_Cover: "",
     medical_History: "",
-    file_upload: "",
+    Executive_Id: "",
+    Executive_Name: "",
   });
 
+  const [errors, setErrors] = useState<any>({});
   const [showAlert, setShowAlert] = useState(false);
   const [alertMessage, setAlertMessage] = useState("");
+  const [file, setFile] = useState<File | null>(null);
+  const [formDataState, setFormDataState] = useState({
+    Executive_Id: "",
+    Executive_Name: "",
+  });
+  useEffect(() => {
+    const executiveId = localStorage.getItem("userId");
+    console.log("Executive ID:", executiveId);
+
+    if (executiveId) {
+      axios
+        .get(`http://localhost:4000/api/clients/_id/${executiveId}`)
+        .then((response) => {
+          console.log("Executive details response:", response.data);
+
+          if (response.data && response.data.length > 0) {
+            const { clientName } = response.data[0];
+            console.log("Client name:", clientName);
+
+            setFormDataState({
+              Executive_Id: executiveId,
+              Executive_Name: clientName,
+            });
+          } else {
+            console.error(
+              "Client details not found in response data:",
+              response.data
+            );
+          }
+        })
+        .catch((error) => {
+          console.error("Error fetching executive details:", error);
+        });
+    }
+  }, []);
 
   const handleChange = (e: any) => {
     const { name, value } = e.target;
@@ -59,23 +129,80 @@ const EnquiryPage: React.FC = () => {
     setFormData({ ...formData, [name]: e.detail.value });
   };
 
+  const validateForm = () => {
+    let valid = true;
+    let newErrors: any = {};
+
+    const requiredFields = [
+      "Pan_Card",
+      "Adhar_Card",
+      "name",
+      "mobile_nu",
+      "Mother_Name",
+      "Email",
+      "Nominee_Name",
+      "Nominee_Ralationship",
+      "Company_Name",
+      "Annual_Income",
+      "Industry_Name",
+    ];
+
+    requiredFields.forEach((field) => {
+      if (!formData[field]) {
+        valid = false;
+        newErrors[field] = "This field is required";
+      }
+    });
+
+    if (formData.name && !/^[A-Za-z\s]+$/.test(formData.name)) {
+      valid = false;
+      newErrors.name = "Invalid name format";
+    }
+
+    if (formData.mobile_nu && !/^\d{10}$/.test(formData.mobile_nu)) {
+      valid = false;
+      newErrors.mobile_nu = "Mobile number must be exactly 10 digits";
+    }
+
+    if (
+      formData.Alternative_Mobile &&
+      !/^\d{10}$/.test(formData.Alternative_Mobile)
+    ) {
+      valid = false;
+      newErrors.Alternative_Mobile =
+        "Alternative mobile number must be exactly 10 digits";
+    }
+
+    if (formData.Email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.Email)) {
+      valid = false;
+      newErrors.Email = "Invalid email format";
+    }
+
+    setErrors(newErrors);
+    return valid;
+  };
+
   const handleSave = async () => {
+    console.log("Form Data:", formData);
+    if (!validateForm()) {
+      setAlertMessage("Please fix the errors in the form.");
+      setShowAlert(true);
+      return;
+    }
+
     try {
-      const apiUrl = "https://grapeseed-executive.onrender.com/api/enquiry";
-      const response = await fetch(apiUrl, {
-        method: "POST",
+      const apiUrl = "http://localhost:4000/api/enquiry";
+      const response = await axios.post(apiUrl, formData, {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(formData),
       });
 
-      if (!response.ok) {
+      if (response.status !== 201) {
         throw new Error("Network response was not ok");
       }
 
-      const result = await response.json();
-      console.log("Enquiry saved:", result);
+      console.log("Enquiry saved:", response.data);
       setAlertMessage("Enquiry saved successfully!");
       setShowAlert(true);
     } catch (error) {
@@ -85,13 +212,41 @@ const EnquiryPage: React.FC = () => {
     }
   };
 
+  const handleFileChange = (event: any) => {
+    const files = event.target.files;
+    if (files && files[0]) {
+      setFile(files[0]);
+    }
+  };
+  const handleSubmit = (event: any) => {
+    event.preventDefault();
+
+    if (file) {
+      const uploadData = new FormData();
+      uploadData.append("file", file);
+      uploadData.append("executive_id", formDataState.Executive_Id || "");
+      uploadData.append("executive_name", formDataState.Executive_Name || "");
+
+      axios
+        .post("https://virtuebyte.onrender.com/upload", uploadData)
+        .then((response) => {
+          console.log("File uploaded successfully:", response.data);
+        })
+        .catch((error) => {
+          console.error(
+            "Error uploading file:",
+            error.response?.data || error.message
+          );
+        });
+    }
+  };
+
   return (
     <IonPage>
       <IonContent className="enquiry-content ion-padding">
         <IonRow className="ion-text-center">
           <IonCol>
-            <img src={logo} alt="Logo" className="profile-logo" />{" "}
-            {/* <h3>View Enquiry</h3> */}
+            <img src={logo} alt="Logo" className="profile-logo" />
           </IonCol>
         </IonRow>
         <IonAccordionGroup>
@@ -101,13 +256,7 @@ const EnquiryPage: React.FC = () => {
               <IonLabel>Customer Details</IonLabel>
             </IonItem>
             <div slot="content">
-              <IonItem
-                style={{
-                  // border: "1px solid",
-                  margin: "0.5em 0",
-                  alignItem: "center",
-                }}
-              >
+              <IonItem style={{ margin: "0.5em 0" }}>
                 <IonInput
                   name="Pan_Card"
                   value={formData.Pan_Card}
@@ -115,19 +264,12 @@ const EnquiryPage: React.FC = () => {
                   fill="outline"
                   className="enquiry-input"
                   placeholder="Pan Card"
-                  style={{
-                    display: "flex",
-                    alignItem: "center",
-                  }}
                 />
+                {errors.Pan_Card && (
+                  <div className="error">{errors.Pan_Card}</div>
+                )}
               </IonItem>
-              <IonItem
-                style={{
-                  // border: "1px solid",
-                  margin: "0.5em 0",
-                  alignItem: "center",
-                }}
-              >
+              <IonItem style={{ margin: "0.5em 0" }}>
                 <IonInput
                   name="Adhar_Card"
                   value={formData.Adhar_Card}
@@ -135,75 +277,25 @@ const EnquiryPage: React.FC = () => {
                   fill="outline"
                   className="enquiry-input"
                   placeholder="Adhar Card"
-                  style={{
-                    display: "flex",
-                    alignItem: "center",
-                  }}
                 />
+                {errors.Adhar_Card && (
+                  <div className="error">{errors.Adhar_Card}</div>
+                )}
               </IonItem>
-              {/* <IonItem>
-                <IonLabel position="stacked">Adhar Card</IonLabel>
-                <IonInput
-                  name="Adhar_Card"
-                  value={formData.Adhar_Card}
-                  onIonChange={handleChange}
-                  fill="outline"
-                  className="enquiry-input"
-                />
-              </IonItem> */}
-              <IonItem
-                style={{
-                  // border: "1px solid",
-                  margin: "0.5em 0",
-                  display: "flex",
-                  alignItem: "center",
-                }}
-              >
+              <IonItem style={{ margin: "0.5em 0" }}>
                 <IonInput
                   name="Cancelled_cheque"
+                  type="text"
                   value={formData.Cancelled_cheque}
                   onIonChange={handleChange}
                   fill="outline"
                   className="enquiry-input"
                   placeholder="Cancelled Cheque"
-                  style={{
-                    display: "flex",
-                    alignItem: "center",
-                  }}
                 />
+                {errors.Cancelled_cheque && (
+                  <div className="error">{errors.Cancelled_cheque}</div>
+                )}
               </IonItem>
-              {/* <IonItem>
-                <IonLabel position="stacked">Cancelled Cheque</IonLabel>
-                <IonInput
-                  name="Cancelled_cheque"
-                  value={formData.Cancelled_cheque}
-                  onIonChange={handleChange}
-                  fill="outline"
-                  className="enquiry-input"
-                />
-              </IonItem> */}
-              {/* <IonItem
-                style={{
-                  // border: "1px solid",
-                  margin: "0.5em 0",
-                  display: "flex",
-                  alignItem: "center",
-                }}
-              >
-                <IonInput
-                  name="Employeement_Status"
-                  value={formData.Employeement_Status}
-                  onIonChange={(e) =>
-                    handleSelectChange(e, "Employeement_Status")
-                  }
-                  className="enquiry-input"
-                  placeholder="Employeement_Status"
-                  style={{
-                    display: "flex",
-                    alignItem: "center",
-                  }}
-                />
-              </IonItem> */}
               <IonItem>
                 <IonLabel>Employeement Status</IonLabel>
                 <IonSelect
@@ -219,6 +311,9 @@ const EnquiryPage: React.FC = () => {
                   </IonSelectOption>
                   <IonSelectOption value="salaried">Salaried</IonSelectOption>
                 </IonSelect>
+                {errors.Employeement_Status && (
+                  <div className="error">{errors.Employeement_Status}</div>
+                )}
               </IonItem>
             </div>
           </IonAccordion>
@@ -232,107 +327,49 @@ const EnquiryPage: React.FC = () => {
               <IonLabel>Personal Information</IonLabel>
             </IonItem>
             <div slot="content">
-              <IonItem
-                style={{
-                  // border: "1px solid",
-                  margin: "0.5em 0",
-                  display: "flex",
-                  alignItem: "center",
-                }}
-              >
+              <IonItem style={{ margin: "0.5em 0" }}>
                 <IonInput
                   name="name"
+                  type="text"
                   value={formData.name}
                   onIonChange={handleChange}
                   fill="outline"
                   className="enquiry-input"
                   placeholder="Name"
-                  style={{
-                    display: "flex",
-                    alignItem: "center",
-                  }}
                 />
+                {errors.name && <div className="error">{errors.name}</div>}
               </IonItem>
-              {/* <IonItem>
-                <IonLabel position="stacked">Name</IonLabel>
-                <IonInput
-                  name="name"
-                  value={formData.name}
-                  onIonChange={handleChange}
-                  fill="outline"
-                  className="enquiry-input"
-                />
-              </IonItem> */}
-              <IonItem
-                style={{
-                  // border: "1px solid",
-                  margin: "0.5em 0",
-                  display: "flex",
-                  alignItem: "center",
-                }}
-              >
+              <IonItem style={{ margin: "0.5em 0" }}>
                 <IonInput
                   name="mobile_nu"
+                  type="tel"
                   value={formData.mobile_nu}
                   onIonChange={handleChange}
                   fill="outline"
                   className="enquiry-input"
                   placeholder="Mobile Number"
-                  style={{
-                    display: "flex",
-                    alignItem: "center",
-                  }}
+                  maxlength={10}
                 />
+                {errors.mobile_nu && (
+                  <div className="error">{errors.mobile_nu}</div>
+                )}
               </IonItem>
-              {/* <IonItem>
-                <IonLabel position="stacked">Mobile Number</IonLabel>
-                <IonInput
-                  name="mobile_nu"
-                  value={formData.mobile_nu}
-                  onIonChange={handleChange}
-                  fill="outline"
-                  className="enquiry-input"
-                />
-              </IonItem> */}
-              <IonItem
-                style={{
-                  // border: "1px solid",
-                  margin: "0.5em 0",
-                  display: "flex",
-                  alignItem: "center",
-                }}
-              >
+              <IonItem style={{ margin: "0.5em 0" }}>
                 <IonInput
                   name="Alternative_Mobile"
+                  type="tel"
                   value={formData.Alternative_Mobile}
                   onIonChange={handleChange}
                   fill="outline"
                   className="enquiry-input"
                   placeholder="Alternative Mobile"
-                  style={{
-                    display: "flex",
-                    alignItem: "center",
-                  }}
+                  maxlength={10}
                 />
+                {errors.Alternative_Mobile && (
+                  <div className="error">{errors.Alternative_Mobile}</div>
+                )}
               </IonItem>
-              {/* <IonItem>
-                <IonLabel position="stacked">Alternative Mobile</IonLabel>
-                <IonInput
-                  name="Alternative_Mobile"
-                  value={formData.Alternative_Mobile}
-                  onIonChange={handleChange}
-                  fill="outline"
-                  className="enquiry-input"
-                />
-              </IonItem> */}
-              <IonItem
-                style={{
-                  // border: "1px solid",
-                  margin: "0.5em 0",
-                  display: "flex",
-                  alignItem: "center",
-                }}
-              >
+              <IonItem style={{ margin: "0.5em 0" }}>
                 <IonInput
                   name="Mother_Name"
                   value={formData.Mother_Name}
@@ -340,30 +377,12 @@ const EnquiryPage: React.FC = () => {
                   fill="outline"
                   className="enquiry-input"
                   placeholder="Mother's Name"
-                  style={{
-                    display: "flex",
-                    alignItem: "center",
-                  }}
                 />
+                {errors.Mother_Name && (
+                  <div className="error">{errors.Mother_Name}</div>
+                )}
               </IonItem>
-              {/* <IonItem>
-                <IonLabel position="stacked">Mother's Name</IonLabel>
-                <IonInput
-                  name="Mother_Name"
-                  value={formData.Mother_Name}
-                  onIonChange={handleChange}
-                  fill="outline"
-                  className="enquiry-input"
-                />
-              </IonItem> */}
-              <IonItem
-                style={{
-                  // border: "1px solid",
-                  margin: "0.5em 0",
-                  display: "flex",
-                  alignItem: "center",
-                }}
-              >
+              <IonItem style={{ margin: "0.5em 0" }}>
                 <IonInput
                   name="Last_Education"
                   value={formData.Last_Education}
@@ -371,30 +390,12 @@ const EnquiryPage: React.FC = () => {
                   fill="outline"
                   className="enquiry-input"
                   placeholder="Last Education"
-                  style={{
-                    display: "flex",
-                    alignItem: "center",
-                  }}
                 />
+                {errors.Last_Education && (
+                  <div className="error">{errors.Last_Education}</div>
+                )}
               </IonItem>
-              {/* <IonItem>
-                <IonLabel position="stacked">Last Education</IonLabel>
-                <IonInput
-                  name="Last_Education"
-                  value={formData.Last_Education}
-                  onIonChange={handleChange}
-                  fill="outline"
-                  className="enquiry-input"
-                />
-              </IonItem> */}
-              <IonItem
-                style={{
-                  // border: "1px solid",
-                  margin: "0.5em 0",
-                  display: "flex",
-                  alignItem: "center",
-                }}
-              >
+              <IonItem style={{ margin: "0.5em 0" }}>
                 <IonInput
                   name="Email"
                   value={formData.Email}
@@ -402,53 +403,9 @@ const EnquiryPage: React.FC = () => {
                   fill="outline"
                   className="enquiry-input"
                   placeholder="Email"
-                  style={{
-                    display: "flex",
-                    alignItem: "center",
-                  }}
                 />
+                {errors.Email && <div className="error">{errors.Email}</div>}
               </IonItem>
-              {/* <IonItem>
-                <IonLabel position="stacked">Email</IonLabel>
-                <IonInput
-                  name="Email"
-                  value={formData.Email}
-                  onIonChange={handleChange}
-                  fill="outline"
-                  className="enquiry-input"
-                />
-              </IonItem> */}
-              {/* <IonItem
-                style={{
-                  // border: "1px solid",
-                  margin: "0.5em 0",
-                  display: "flex",
-                  alignItem: "center",
-                }}
-              >
-                <IonInput
-                  name="Married_Status"
-                  value={formData.Married_Status}
-                  onIonChange={handleChange}
-                  fill="outline"
-                  className="enquiry-input"
-                  placeholder="Married Status"
-                  style={{
-                    display: "flex",
-                    alignItem: "center",
-                  }}
-                />
-              </IonItem> */}
-              {/* <IonItem>
-                <IonLabel position="stacked">Married Status</IonLabel>
-                <IonInput
-                  name="Married_Status"
-                  value={formData.Married_Status}
-                  onIonChange={handleChange}
-                  fill="outline"
-                  className="enquiry-input"
-                />
-              </IonItem> */}
               <IonItem>
                 <IonLabel>Life Stage</IonLabel>
                 <IonSelect
@@ -466,6 +423,9 @@ const EnquiryPage: React.FC = () => {
                     Close to Retirement
                   </IonSelectOption>
                 </IonSelect>
+                {errors.lifeStage && (
+                  <div className="error">{errors.lifeStage}</div>
+                )}
               </IonItem>
             </div>
           </IonAccordion>
@@ -476,14 +436,7 @@ const EnquiryPage: React.FC = () => {
               <IonLabel>Nominee Information</IonLabel>
             </IonItem>
             <div slot="content">
-              <IonItem
-                style={{
-                  // border: "1px solid",
-                  margin: "0.5em 0",
-                  display: "flex",
-                  alignItem: "center",
-                }}
-              >
+              <IonItem style={{ margin: "0.5em 0" }}>
                 <IonInput
                   name="Nominee_Name"
                   value={formData.Nominee_Name}
@@ -491,61 +444,30 @@ const EnquiryPage: React.FC = () => {
                   fill="outline"
                   className="enquiry-input"
                   placeholder="Nominee Name"
-                  style={{
-                    display: "flex",
-                    alignItem: "center",
-                  }}
                 />
+                {errors.Nominee_Name && (
+                  <div className="error">{errors.Nominee_Name}</div>
+                )}
               </IonItem>
-              {/* <IonItem>
-                <IonLabel position="stacked">Nominee Name</IonLabel>
-                <IonInput
-                  name="Nominee_Name"
-                  value={formData.Nominee_Name}
-                  onIonChange={handleChange}
-                  fill="outline"
-                  className="enquiry-input"
-                />
-              </IonItem> */}
-              <IonItem
-                style={{
-                  // border: "1px solid",
-                  margin: "0.5em 0",
-                  display: "flex",
-                  alignItem: "center",
-                }}
-              >
+              <IonItem style={{ margin: "0.5em 0" }}>
+                <label htmlFor="">
+                  Nominee DOB &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                </label>
                 <IonInput
                   name="Nominee_DOB"
+                  type="date"
                   value={formData.Nominee_DOB}
                   onIonChange={handleChange}
                   fill="outline"
                   className="enquiry-input"
                   placeholder="Nominee DOB"
-                  style={{
-                    display: "flex",
-                    alignItem: "center",
-                  }}
                 />
+                {errors.Nominee_DOB && (
+                  <div className="error">{errors.Nominee_DOB}</div>
+                )}
               </IonItem>
-              {/* <IonItem>
-                <IonLabel position="stacked">Nominee DOB</IonLabel>
-                <IonInput
-                  name="Nominee_DOB"
-                  value={formData.Nominee_DOB}
-                  onIonChange={handleChange}
-                  fill="outline"
-                  className="enquiry-input"
-                />
-              </IonItem> */}
-              <IonItem
-                style={{
-                  // border: "1px solid",
-                  margin: "0.5em 0",
-                  display: "flex",
-                  alignItem: "center",
-                }}
-              >
+
+              <IonItem style={{ margin: "0.5em 0" }}>
                 <IonInput
                   name="Nominee_Ralationship"
                   value={formData.Nominee_Ralationship}
@@ -553,22 +475,11 @@ const EnquiryPage: React.FC = () => {
                   fill="outline"
                   className="enquiry-input"
                   placeholder="Nominee Relationship"
-                  style={{
-                    display: "flex",
-                    alignItem: "center",
-                  }}
                 />
+                {errors.Nominee_Ralationship && (
+                  <div className="error">{errors.Nominee_Ralationship}</div>
+                )}
               </IonItem>
-              {/* <IonItem>
-                <IonLabel position="stacked">Nominee Relationship</IonLabel>
-                <IonInput
-                  name="Nominee_Ralationship"
-                  value={formData.Nominee_Ralationship}
-                  onIonChange={handleChange}
-                  fill="outline"
-                  className="enquiry-input"
-                />
-              </IonItem> */}
             </div>
           </IonAccordion>
 
@@ -578,14 +489,7 @@ const EnquiryPage: React.FC = () => {
               <IonLabel>Work Details</IonLabel>
             </IonItem>
             <div slot="content">
-              <IonItem
-                style={{
-                  // border: "1px solid",
-                  margin: "0.5em 0",
-                  display: "flex",
-                  alignItem: "center",
-                }}
-              >
+              <IonItem style={{ margin: "0.5em 0" }}>
                 <IonInput
                   name="Company_Name"
                   value={formData.Company_Name}
@@ -593,30 +497,12 @@ const EnquiryPage: React.FC = () => {
                   fill="outline"
                   className="enquiry-input"
                   placeholder="Company Name"
-                  style={{
-                    display: "flex",
-                    alignItem: "center",
-                  }}
                 />
+                {errors.Company_Name && (
+                  <div className="error">{errors.Company_Name}</div>
+                )}
               </IonItem>
-              {/* <IonItem>
-                <IonLabel position="stacked">Company Name</IonLabel>
-                <IonInput
-                  name="Company_Name"
-                  value={formData.Company_Name}
-                  onIonChange={handleChange}
-                  fill="outline"
-                  className="enquiry-input"
-                />
-              </IonItem> */}
-              <IonItem
-                style={{
-                  // border: "1px solid",
-                  margin: "0.5em 0",
-                  display: "flex",
-                  alignItem: "center",
-                }}
-              >
+              <IonItem style={{ margin: "0.5em 0" }}>
                 <IonInput
                   name="Annual_Income"
                   value={formData.Annual_Income}
@@ -624,30 +510,12 @@ const EnquiryPage: React.FC = () => {
                   fill="outline"
                   className="enquiry-input"
                   placeholder="Annual Income"
-                  style={{
-                    display: "flex",
-                    alignItem: "center",
-                  }}
                 />
+                {errors.Annual_Income && (
+                  <div className="error">{errors.Annual_Income}</div>
+                )}
               </IonItem>
-              {/* <IonItem>
-                <IonLabel position="stacked">Annual Income</IonLabel>
-                <IonInput
-                  name="Annual_Income"
-                  value={formData.Annual_Income}
-                  onIonChange={handleChange}
-                  fill="outline"
-                  className="enquiry-input"
-                />
-              </IonItem> */}
-              <IonItem
-                style={{
-                  // border: "1px solid",
-                  margin: "0.5em 0",
-                  display: "flex",
-                  alignItem: "center",
-                }}
-              >
+              <IonItem style={{ margin: "0.5em 0" }}>
                 <IonInput
                   name="Industry_Name"
                   value={formData.Industry_Name}
@@ -655,22 +523,11 @@ const EnquiryPage: React.FC = () => {
                   fill="outline"
                   className="enquiry-input"
                   placeholder="Industry Name"
-                  style={{
-                    display: "flex",
-                    alignItem: "center",
-                  }}
                 />
+                {errors.Industry_Name && (
+                  <div className="error">{errors.Industry_Name}</div>
+                )}
               </IonItem>
-              {/* <IonItem>
-                <IonLabel position="stacked">Industry Name</IonLabel>
-                <IonInput
-                  name="Industry_Name"
-                  value={formData.Industry_Name}
-                  onIonChange={handleChange}
-                  fill="outline"
-                  className="enquiry-input"
-                />
-              </IonItem> */}
             </div>
           </IonAccordion>
 
@@ -683,13 +540,7 @@ const EnquiryPage: React.FC = () => {
               <IonLabel>Physical Information</IonLabel>
             </IonItem>
             <div slot="content">
-              <IonItem
-                style={{
-                  margin: "0.5em 0",
-                  display: "flex",
-                  alignItem: "center",
-                }}
-              >
+              <IonItem style={{ margin: "0.5em 0" }}>
                 <IonInput
                   name="Height"
                   value={formData.Height}
@@ -697,30 +548,10 @@ const EnquiryPage: React.FC = () => {
                   fill="outline"
                   className="enquiry-input"
                   placeholder="Height"
-                  style={{
-                    display: "flex",
-                    alignItem: "center",
-                  }}
                 />
+                {errors.Height && <div className="error">{errors.Height}</div>}
               </IonItem>
-              {/* <IonItem>
-                <IonLabel position="stacked">Height</IonLabel>
-                <IonInput
-                  name="Height"
-                  value={formData.Height}
-                  onIonChange={handleChange}
-                  fill="outline"
-                  className="enquiry-input"
-                />
-              </IonItem> */}
-              <IonItem
-                style={{
-                  // border: "1px solid",
-                  margin: "0.5em 0",
-                  display: "flex",
-                  alignItem: "center",
-                }}
-              >
+              <IonItem style={{ margin: "0.5em 0" }}>
                 <IonInput
                   name="Weight"
                   value={formData.Weight}
@@ -728,30 +559,10 @@ const EnquiryPage: React.FC = () => {
                   fill="outline"
                   className="enquiry-input"
                   placeholder="Weight"
-                  style={{
-                    display: "flex",
-                    alignItem: "center",
-                  }}
                 />
+                {errors.Weight && <div className="error">{errors.Weight}</div>}
               </IonItem>
-              {/* <IonItem>
-                <IonLabel position="stacked">Weight</IonLabel>
-                <IonInput
-                  name="Weight"
-                  value={formData.Weight}
-                  onIonChange={handleChange}
-                  fill="outline"
-                  className="enquiry-input"
-                />
-              </IonItem> */}
-              <IonItem
-                style={{
-                  // border: "1px solid",
-                  margin: "0.5em 0",
-                  display: "flex",
-                  alignItem: "center",
-                }}
-              >
+              <IonItem style={{ margin: "0.5em 0" }}>
                 <IonInput
                   name="Life_Cover"
                   value={formData.Life_Cover}
@@ -759,30 +570,12 @@ const EnquiryPage: React.FC = () => {
                   fill="outline"
                   className="enquiry-input"
                   placeholder="Life Cover"
-                  style={{
-                    display: "flex",
-                    alignItem: "center",
-                  }}
                 />
+                {errors.Life_Cover && (
+                  <div className="error">{errors.Life_Cover}</div>
+                )}
               </IonItem>
-              {/* <IonItem>
-                <IonLabel position="stacked">Life Cover</IonLabel>
-                <IonInput
-                  name="Life_Cover"
-                  value={formData.Life_Cover}
-                  onIonChange={handleChange}
-                  fill="outline"
-                  className="enquiry-input"
-                />
-              </IonItem> */}
-              <IonItem
-                style={{
-                  // border: "1px solid",
-                  margin: "0.5em 0",
-                  display: "flex",
-                  alignItem: "center",
-                }}
-              >
+              <IonItem style={{ margin: "0.5em 0" }}>
                 <IonInput
                   name="medical_History"
                   value={formData.medical_History}
@@ -790,55 +583,73 @@ const EnquiryPage: React.FC = () => {
                   fill="outline"
                   className="enquiry-input"
                   placeholder="Medical History"
-                  style={{
-                    display: "flex",
-                    alignItem: "center",
-                  }}
                 />
-              </IonItem>
-              {/* <IonItem>
-                <IonLabel position="stacked">Medical History</IonLabel>
-                <IonInput
-                  name="medical_History"
-                  value={formData.medical_History}
-                  onIonChange={handleChange}
-                  fill="outline"
-                  className="enquiry-input"
-                />
-              </IonItem> */}
-            </div>
-          </IonAccordion>
-          {/* File upload */}
-          <IonAccordion value="file_upload" style={{ margin: "1em 0" }}>
-            <IonItem slot="header">
-              <IonLabel>File upload</IonLabel>
-            </IonItem>
-            <div slot="content">
-              <IonItem
-                style={{
-                  // border: "1px solid",
-                  margin: "0.5em 0",
-                  display: "flex",
-                  alignItem: "center",
-                }}
-              >
-                <input
-                  name="Height"
-                  type="file"
-                  // value={formData.Height}
-                  // onIonChange={handleChange}
-                  fill="outline"
-                  className="enquiry-input"
-                  placeholder="Upload file"
-                  style={{
-                    display: "flex",
-                    alignItem: "center",
-                  }}
-                />
+                {errors.medical_History && (
+                  <div className="error">{errors.medical_History}</div>
+                )}
               </IonItem>
             </div>
           </IonAccordion>
         </IonAccordionGroup>
+
+        <div>
+          <form onSubmit={handleSubmit} encType="multipart/form-data">
+            <IonItem>
+              <IonLabel>Select a PDF file:</IonLabel>
+              <input
+                type="file"
+                accept=".pdf"
+                required
+                onChange={handleFileChange}
+              />
+            </IonItem>
+            {/* <IonItem>
+              <IonLabel>Executive ID:</IonLabel>
+              <IonInput value={formData.Executive_Id} readonly />
+            </IonItem>
+            <IonItem>
+              <IonLabel>Executive Name:</IonLabel>
+              <IonInput value={formData.Executive_Name} readonly />
+            </IonItem> */}
+
+            <IonButton type="submit">Upload</IonButton>
+
+            <IonList>
+              <form onSubmit={uploadFiles} encType="multipart/form-data">
+                <IonItem>
+                  <IonLabel position="stacked">
+                    Upload Aadhaar Card (PDF/Image):
+                  </IonLabel>
+                  <input
+                    type="file"
+                    name="adhar"
+                    accept=".pdf,.png,.jpg,.jpeg"
+                    required
+                  />
+                </IonItem>
+                <IonItemDivider></IonItemDivider>
+                <IonItem>
+                  <IonLabel position="stacked">Upload Your Image:</IonLabel>
+                  <input
+                    type="file"
+                    name="image"
+                    accept=".png,.jpg,.jpeg"
+                    required
+                  />
+                </IonItem>
+                <IonItemDivider></IonItemDivider>
+                <IonButton expand="full" type="submit">
+                  Upload
+                </IonButton>
+              </form>
+              {result && (
+                <IonItem>
+                  <IonText>{result}</IonText>
+                </IonItem>
+              )}
+            </IonList>
+          </form>
+        </div>
 
         <IonButton
           expand="block"

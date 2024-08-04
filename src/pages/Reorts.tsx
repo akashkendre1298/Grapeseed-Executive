@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import axios from "axios";
 import {
   IonContent,
   IonPage,
@@ -12,13 +13,20 @@ import {
   IonCol,
   IonText,
   IonItem,
+  IonInput,
+  IonIcon,
 } from "@ionic/react";
-import "./ViewEnquiry.css";
+import { searchOutline } from "ionicons/icons";
+import "./Reports.css";
 import logo from "../assets/gapeseed-logo.png";
-const ViewEnquiry = () => {
-  const [expandedCards, setExpandedCards] = useState([]);
+
+const Reports = () => {
+  const [expandedCards, setExpandedCards] = useState<boolean[]>([]);
+
   const [inquiryData, setInquiryData] = useState([]);
-  const apiUrl = "http://localhost:4000/api/enquiry";
+  const [searchQuery, setSearchQuery] = useState("");
+  const executiveId = localStorage.getItem("userId");
+  const apiUrl = `http://localhost:4000/api/enquiry/executive/${executiveId}`;
 
   useEffect(() => {
     fetchData();
@@ -26,19 +34,15 @@ const ViewEnquiry = () => {
 
   const fetchData = async () => {
     try {
-      const response = await fetch(apiUrl);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data = await response.json();
-      setInquiryData(data);
-      setExpandedCards(new Array(data.length).fill(false));
+      const response = await axios.get(apiUrl);
+      setInquiryData(response.data);
+      setExpandedCards(new Array(response.data.length).fill(false));
     } catch (error) {
       console.error("Error fetching data:", error);
     }
   };
 
-  const handleViewMore = (cardNumber) => {
+  const handleViewMore = (cardNumber: number) => {
     setExpandedCards((prevExpandedCards) =>
       prevExpandedCards.map((value, index) =>
         index === cardNumber ? !value : value
@@ -46,7 +50,7 @@ const ViewEnquiry = () => {
     );
   };
 
-  const renderCardFields = (data) => {
+  const renderCardFields = (data: never) => {
     return (
       <>
         <IonItem>
@@ -112,22 +116,44 @@ const ViewEnquiry = () => {
         <IonItem>
           <IonText>Employment Status: {data.Employeement_Status}</IonText>
         </IonItem>
+        <IonItem>
+          <IonText>Status:{data.Enquiry_Status}</IonText>
+        </IonItem>
       </>
     );
   };
+
+  const filteredData =
+    inquiryData.length > 0
+      ? inquiryData.filter((data) =>
+          data.name.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+      : [];
 
   return (
     <IonPage>
       <IonContent className="view-enquiry-content">
         <IonRow className="ion-text-center">
           <IonCol>
-            <img src={logo} alt="Logo" className="profile-logo" />{" "}
-            {/* <h3>View Enquiry</h3> */}
+            <img src={logo} alt="Logo" className="profile-logo" />
           </IonCol>
         </IonRow>
 
-        {inquiryData.length > 0 ? (
-          inquiryData.map((data, index) => (
+        <IonRow>
+          <IonCol>
+            <IonItem className="search-bar">
+              <IonIcon icon={searchOutline} slot="start" />
+              <IonInput
+                value={searchQuery}
+                placeholder="Search by Customer Name"
+                onIonChange={(e) => setSearchQuery(e.detail.value)}
+              />
+            </IonItem>
+          </IonCol>
+        </IonRow>
+
+        {filteredData.length > 0 ? (
+          filteredData.map((data, index) => (
             <IonCard key={index} className="card">
               <IonCardHeader>
                 <IonCardTitle>Customer Details</IonCardTitle>
@@ -164,4 +190,4 @@ const ViewEnquiry = () => {
   );
 };
 
-export default ViewEnquiry;
+export default Reports;

@@ -1,0 +1,38 @@
+.accordion-item {
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  margin-bottom: 10px;
+}
+
+.accordion-label {
+  display: block;
+  padding: 10px;
+}
+
+.accordion-title {
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 0;
+  padding: 10px;
+}
+
+.accordion-content {
+  padding: 10px;
+}
+
+.policy-details {
+  padding-top: 10px;
+}
+
+.policy-details h2 {
+  font-size: 20px;
+  margin-top: 15px; /* Adjust the top margin for spacing between each section */
+}
+
+.policy-details p {
+  margin: 5px 0 15px;
+  color: #daa520;
+  font-size: 18px;
+}

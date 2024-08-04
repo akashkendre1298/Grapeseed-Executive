@@ -22,7 +22,7 @@ const EditStatus = () => {
   const [enquiries, setEnquiries] = useState([]);
   const [statuses, setStatuses] = useState({});
   const [showDetailsMap, setShowDetailsMap] = useState({});
-  const apiUrl = "https://grapeseed-executive.onrender.com/api/enquiry";
+  const apiUrl = "http://localhost:4000/api/enquiry";
 
   useEffect(() => {
     fetchData();
